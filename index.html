@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas</title>
+    <style>
+        body {
+            background: linear-gradient(to right, red, black);
+            color: white;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            background-color: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        button.delete {
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lista de Tarefas</h1>
+    <form id="task-form">
+        <input type="text" id="task-input" placeholder="Adicionar nova tarefa" required>
+        <button type="submit">Adicionar</button>
+    </form>
+    <ul id="task-list">
+        <!-- Lista de tarefas será inserida aqui -->
+    </ul>
+
+    <script>
+        const form = document.getElementById('task-form');
+        const taskInput = document.getElementById('task-input');
+        const taskList = document.getElementById('task-list');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const task = taskInput.value;
+            if (task) {
+                fetch('/adicionar_tarefa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tarefa: task })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    taskInput.value = '';
+                    updateTaskList(data.lista_tarefas);
+                });
+            }
+        });
+
+        function updateTaskList(tarefas) {
+            taskList.innerHTML = '';
+            tarefas.forEach((tarefa, index) => {
+                const li = document.createElement('li');
+                li.textContent = tarefa;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Deletar';
+                deleteButton.className = 'delete';
+                deleteButton.addEventListener('click', () => {
+                    fetch(`/deletar/${index}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => updateTaskList(data.lista_tarefas));
+                });
+                li.appendChild(deleteButton);
+                taskList.appendChild(li);
+            });
+        }
+
+        window.onload = function() {
+            fetch('/')
+            .then(response => response.json())
+            .then(data => updateTaskList(data.lista_tarefas));
+        }
+    </script>
+</body>
+</html>
